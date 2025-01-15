@@ -1,14 +1,15 @@
-from .nodes.egtjtxsy import EGCPSYTJNode
+from .nodes.watermark_overlay import WatermarkOverlayNode
 
 NODE_CLASS_MAPPINGS = {
-    "EG_CPSYTJ": EGCPSYTJNode,
+    "WatermarkOverlay": WatermarkOverlayNode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "EG_CPSYTJ": "2🐕 Add finished watermark image",
+    "WatermarkOverlay": "Image Watermark Overlay",
 }
 
 __all__ = [
     'NODE_CLASS_MAPPINGS',
-    'NODE_DISPLAY_NAME_MAPPINGS'
+    'NODE_DISPLAY_NAME_MAPPINGS',
 ]
+
