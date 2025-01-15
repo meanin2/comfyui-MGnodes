@@ -1,8 +1,0 @@
-requests
-torch
-torchvision
-Pillow
-numpy
-scipy
-scikit-image
-opencv-python
