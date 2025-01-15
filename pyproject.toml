@@ -1,0 +1,14 @@
+[project]
+name = "watermarking"
+description = "This custom node allows you to overlay a watermark image onto an existing image within ComfyUI."
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+[project.urls]
+Repository = "https://github.com/meanin2/comfyui-watermarking"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "comfyui-watermarking"
+Icon = ""
