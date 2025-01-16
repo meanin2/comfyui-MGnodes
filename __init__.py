@@ -1,15 +1,7 @@
-from .nodes.watermark_overlay import WatermarkOverlayNode
+from .watermark_node import WatermarkNode
 
 NODE_CLASS_MAPPINGS = {
-    "WatermarkOverlay": WatermarkOverlayNode,
+    "WatermarkNode": WatermarkNode
 }
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "WatermarkOverlay": "Image Watermark Overlay",
-}
-
-__all__ = [
-    'NODE_CLASS_MAPPINGS',
-    'NODE_DISPLAY_NAME_MAPPINGS',
-]
-
+__all__ = ["NODE_CLASS_MAPPINGS"]
