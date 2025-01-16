@@ -1,3 +1,5 @@
+# WIP the node is not ready and does not really work yet.
+
 # ComfyUI Watermark Image Node
 
 This custom node allows you to overlay a watermark image onto an existing image within ComfyUI.
