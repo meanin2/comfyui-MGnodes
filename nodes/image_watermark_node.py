@@ -9,7 +9,7 @@ class ImageWatermarkNode:
             "required": {
                 "image": ("IMAGE",),
                 "watermark_image": ("IMAGE",),
-                # Revert to COMBO but remove "index": True. Provide a label for clarity.
+                "watermark_mask": ("MASK",),
                 "position": ("COMBO", {
                     "choices": [
                         "Center",
@@ -48,6 +48,7 @@ class ImageWatermarkNode:
     def add_watermark(self,
                       image,
                       watermark_image,
+                      watermark_mask,
                       position="Center",
                       opacity_percentage=50,
                       scale_percentage=100):
@@ -71,13 +72,16 @@ class ImageWatermarkNode:
         wmk_np = watermark_image.squeeze(0).cpu().numpy()
         wmk_np = (wmk_np * 255).astype(np.uint8)
 
-        # Convert to PIL and ensure RGBA
-        if wmk_np.shape[2] == 3:
-            wmk = Image.fromarray(wmk_np, mode='RGB').convert('RGBA')
-        elif wmk_np.shape[2] == 4:
-            wmk = Image.fromarray(wmk_np, mode='RGBA')
-        else:
-            raise ValueError(f"Unsupported number of channels for watermark: {wmk_np.shape[2]}")
+        # Convert watermark mask to numpy (0..255) and invert it
+        # Ensure mask is 2D by squeezing all dimensions
+        mask_np = watermark_mask.squeeze().cpu().numpy()
+        # Invert the mask since ComfyUI's masks are typically white for areas to keep
+        mask_np = 255 - (mask_np * 255).astype(np.uint8)
+
+        # Create RGBA watermark by combining RGB image with mask
+        wmk = Image.fromarray(wmk_np, mode='RGB')
+        mask = Image.fromarray(mask_np, mode='L')
+        wmk.putalpha(mask)
 
         # Scale
         scale = scale_percentage / 100.0
@@ -85,12 +89,13 @@ class ImageWatermarkNode:
             new_size = (int(wmk.width * scale), int(wmk.height * scale))
             wmk = wmk.resize(new_size, Image.LANCZOS)
 
-        # Apply user opacity to watermark’s existing alpha
-        opacity = opacity_percentage / 100.0
-        wmk_data = np.array(wmk, dtype=np.uint8)
-        # Multiply existing alpha by desired opacity
-        wmk_data[..., 3] = (wmk_data[..., 3].astype(float) * opacity).astype(np.uint8)
-        wmk = Image.fromarray(wmk_data, mode='RGBA')
+        # Apply opacity to the alpha channel
+        if opacity_percentage != 100:
+            opacity = opacity_percentage / 100.0
+            alpha = np.array(wmk.getchannel('A'))
+            # Preserve relative transparency while applying global opacity
+            new_alpha = (alpha.astype(float) * opacity).astype(np.uint8)
+            wmk.putalpha(Image.fromarray(new_alpha))
 
         # Create an RGBA overlay
         overlay = Image.new('RGBA', base_img.size, (0, 0, 0, 0))
