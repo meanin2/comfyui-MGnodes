@@ -44,6 +44,10 @@ class ImageWatermarkNode:
                     "step": 5,
                     "display": "slider"
                 }),
+                "make_black": ("BOOLEAN", {
+                    "default": False,
+                    "label": "Make Watermark Black"
+                }),
             }
         }
 
@@ -60,6 +64,7 @@ class ImageWatermarkNode:
                       position="Center",
                       opacity_percentage=50,
                       scale_percentage=100,
+                      make_black=False,
                       **kwargs):
         """
         Add a watermark with transparency onto an image. Preserves existing transparency in the base image.
@@ -92,6 +97,15 @@ class ImageWatermarkNode:
 
         # Convert watermark to RGB (not RGBA since we'll add alpha from mask)
         wmk = Image.fromarray(wmk_np, mode='RGB')
+        
+        # Apply black filter if requested
+        if make_black:
+            # Convert to grayscale then back to RGB to preserve image structure
+            wmk = wmk.convert('L').convert('RGB')
+            # Create solid black image
+            black = Image.new('RGB', wmk.size, (0, 0, 0))
+            # Use the grayscale image as opacity to blend with black
+            wmk = Image.blend(black, wmk, 0)  # 0 means full black
 
         # Convert mask to numpy and prepare alpha channel
         mask_np = watermark_mask.squeeze().cpu().numpy()
