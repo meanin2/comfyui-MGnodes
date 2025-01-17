@@ -3,40 +3,46 @@ import torch
 from PIL import Image
 
 class ImageWatermarkNode:
+    """
+    This node adds a watermark image onto an input image, with adjustable
+    position (Center, Top Left, Top Right, Bottom Left, Bottom Right, Tiled),
+    opacity, and scale. It preserves any existing transparency in the base image.
+    """
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "image": ("IMAGE",),
-                "watermark_image": ("IMAGE",),
-                "watermark_mask": ("MASK",),
-                "position": ("COMBO", {
-                    "choices": [
+                "image": ("IMAGE", {}),
+                "watermark_image": ("IMAGE", {}),
+                "watermark_mask": ("MASK", {}),
+                # NOTE: For ComfyUI combos, we must provide a list of strings 
+                # rather than ("COMBO", {...}).
+                "position": (
+                    [
                         "Center",
                         "Top Left",
                         "Top Right",
                         "Bottom Left",
                         "Bottom Right",
-                        "Tiled Pattern"
+                        "Tiled Pattern",
                     ],
-                    "default": "Center",
-                    "label": "Position"
-                }),
+                    {
+                        "default": "Center",
+                    }
+                ),
                 "opacity_percentage": ("INT", {
                     "default": 50,
                     "min": 0,
                     "max": 100,
                     "step": 1,
-                    "display": "slider",
-                    "label": "Opacity %"
+                    "display": "slider"
                 }),
                 "scale_percentage": ("INT", {
                     "default": 100,
                     "min": 10,
                     "max": 1000,
                     "step": 5,
-                    "display": "slider",
-                    "label": "Size %"
+                    "display": "slider"
                 }),
             }
         }
@@ -44,6 +50,8 @@ class ImageWatermarkNode:
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "add_watermark"
     CATEGORY = "image/watermark"
+    # Optionally:
+    # RETURN_NAMES = ("watermarked_image",)
 
     def add_watermark(self,
                       image,
@@ -51,16 +59,20 @@ class ImageWatermarkNode:
                       watermark_mask,
                       position="Center",
                       opacity_percentage=50,
-                      scale_percentage=100):
+                      scale_percentage=100,
+                      **kwargs):
         """
-        Add a watermark with transparency onto an image.
+        Add a watermark with transparency onto an image. Preserves existing transparency in the base image.
         """
+        # Debug any unexpected arguments from the UI
+        if kwargs:
+            print(f"Unexpected arguments: {kwargs}")
 
-        # Convert main image to numpy (0..255)
+        # Convert main image from [1, H, W, C] float32 [0..1] to a Pillow Image
         img_np = image.squeeze(0).cpu().numpy()
         img_np = (img_np * 255).astype(np.uint8)
 
-        # Convert to PIL and ensure RGBA
+        # Convert base image to RGBA
         if img_np.shape[2] == 3:
             base_img = Image.fromarray(img_np, mode='RGB').convert('RGBA')
         elif img_np.shape[2] == 4:
@@ -68,39 +80,44 @@ class ImageWatermarkNode:
         else:
             raise ValueError(f"Unsupported number of channels for main image: {img_np.shape[2]}")
 
-        # Convert watermark to numpy (0..255)
+        # -------------------------------------
+        # FIX: Composite base image onto a blank RGBA to preserve transparency
+        # -------------------------------------
+        blank_bg = Image.new("RGBA", base_img.size, (0, 0, 0, 0))
+        base_img = Image.alpha_composite(blank_bg, base_img)
+
+        # Convert watermark image from [1, H, W, C] float32 [0..1]
         wmk_np = watermark_image.squeeze(0).cpu().numpy()
         wmk_np = (wmk_np * 255).astype(np.uint8)
 
-        # Convert watermark mask to numpy (0..255) and invert it
-        # Ensure mask is 2D by squeezing all dimensions
+        # Convert watermark to RGB (not RGBA since we'll add alpha from mask)
+        wmk = Image.fromarray(wmk_np, mode='RGB')
+
+        # Convert mask to numpy and prepare alpha channel
         mask_np = watermark_mask.squeeze().cpu().numpy()
         # Invert the mask since ComfyUI's masks are typically white for areas to keep
         mask_np = 255 - (mask_np * 255).astype(np.uint8)
-
-        # Create RGBA watermark by combining RGB image with mask
-        wmk = Image.fromarray(wmk_np, mode='RGB')
         mask = Image.fromarray(mask_np, mode='L')
+
+        # Add the mask as alpha channel
         wmk.putalpha(mask)
 
-        # Scale
+        # Scale watermark
         scale = scale_percentage / 100.0
         if scale != 1.0:
             new_size = (int(wmk.width * scale), int(wmk.height * scale))
             wmk = wmk.resize(new_size, Image.LANCZOS)
 
-        # Apply opacity to the alpha channel
-        if opacity_percentage != 100:
-            opacity = opacity_percentage / 100.0
-            alpha = np.array(wmk.getchannel('A'))
-            # Preserve relative transparency while applying global opacity
-            new_alpha = (alpha.astype(float) * opacity).astype(np.uint8)
-            wmk.putalpha(Image.fromarray(new_alpha))
+        # Apply user opacity to watermark’s existing alpha
+        opacity = opacity_percentage / 100.0
+        wmk_data = np.array(wmk, dtype=np.uint8)
+        wmk_data[..., 3] = (wmk_data[..., 3].astype(float) * opacity).astype(np.uint8)
+        wmk = Image.fromarray(wmk_data, mode='RGBA')
 
-        # Create an RGBA overlay
+        # Create an empty RGBA overlay
         overlay = Image.new('RGBA', base_img.size, (0, 0, 0, 0))
 
-        # Mapping for position combos
+        # Validate/fallback position
         pos_map = [
             "Center",
             "Top Left",
@@ -116,10 +133,9 @@ class ImageWatermarkNode:
         if position == "Tiled Pattern":
             for y in range(0, overlay.size[1], wmk.height):
                 for x in range(0, overlay.size[0], wmk.width):
-                    # Use watermark itself as the mask to maintain transparency
                     overlay.paste(wmk, (x, y), wmk)
         else:
-            # Calculate single position
+            # Single placement
             if position == "Center":
                 x = (overlay.width - wmk.width) // 2
                 y = (overlay.height - wmk.height) // 2
@@ -139,17 +155,19 @@ class ImageWatermarkNode:
 
             overlay.paste(wmk, (x, y), wmk)
 
-        # Combine overlay with base image
+        # Alpha composite the overlay onto the base image
         final_img = Image.alpha_composite(base_img, overlay)
 
         # Convert back to float32 [0..1]
         final_np = np.array(final_img, dtype=np.float32) / 255.0
 
-        # If original had only RGB channels, drop alpha
+        # If original had only RGB channels, drop alpha in the final
+        # Otherwise (4 channels), we keep alpha
         if image.shape[1] == 3:
             final_np = final_np[..., :3]
 
-        # Add batch dimension back for ComfyUI
+        # Add batch dimension again for ComfyUI
         final_np = np.expand_dims(final_np, 0)
 
+        # Return as a PyTorch tensor
         return (torch.from_numpy(final_np),)
