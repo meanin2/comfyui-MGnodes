@@ -48,6 +48,10 @@ class ImageWatermarkNode:
                     "default": False,
                     "label": "Make Watermark Black"
                 }),
+                "remove_white": ("BOOLEAN", {
+                    "default": False,
+                    "label": "Remove White Background"
+                }),
             }
         }
 
@@ -65,6 +69,7 @@ class ImageWatermarkNode:
                       opacity_percentage=50,
                       scale_percentage=100,
                       make_black=False,
+                      remove_white=False,
                       **kwargs):
         """
         Add a watermark with transparency onto an image. Preserves existing transparency in the base image.
@@ -100,18 +105,38 @@ class ImageWatermarkNode:
         
         # Apply black filter if requested
         if make_black:
-            # Convert to grayscale then back to RGB to preserve image structure
-            wmk = wmk.convert('L').convert('RGB')
-            # Create solid black image
-            black = Image.new('RGB', wmk.size, (0, 0, 0))
-            # Use the grayscale image as opacity to blend with black
-            wmk = Image.blend(black, wmk, 0)  # 0 means full black
+            # Convert image to numpy array for inversion
+            wmk_data = np.array(wmk)
+            # Invert colors (255 - pixel value)
+            wmk_data = 255 - wmk_data
+            wmk = Image.fromarray(wmk_data, mode='RGB')
 
         # Convert mask to numpy and prepare alpha channel
         mask_np = watermark_mask.squeeze().cpu().numpy()
         # Invert the mask since ComfyUI's masks are typically white for areas to keep
         mask_np = 255 - (mask_np * 255).astype(np.uint8)
         mask = Image.fromarray(mask_np, mode='L')
+
+        # If remove_white is enabled, create a new mask that removes white pixels
+        if remove_white:
+            wmk_data = np.array(wmk)
+            # Create a mask where white pixels (all channels close to 255) become transparent
+            white_threshold = 220  # Adjust this value to be more or less strict about what counts as "white"
+            is_white = np.all(wmk_data >= white_threshold, axis=2)
+            white_mask = np.logical_not(is_white).astype(np.uint8) * 255
+            
+            # Combine with the existing mask using minimum (both masks must allow the pixel)
+            mask_np = np.minimum(mask_np, white_mask)
+            mask = Image.fromarray(mask_np, mode='L')
+
+        # Debug prints
+        print(f"Watermark dimensions: {wmk.size}")
+        print(f"Original mask dimensions: {mask.size}")
+
+        # Resize mask to match watermark dimensions if they don't match
+        if mask.size != wmk.size:
+            mask = mask.resize(wmk.size, Image.LANCZOS)
+            print(f"Resized mask dimensions: {mask.size}")
 
         # Add the mask as alpha channel
         wmk.putalpha(mask)
@@ -122,7 +147,7 @@ class ImageWatermarkNode:
             new_size = (int(wmk.width * scale), int(wmk.height * scale))
             wmk = wmk.resize(new_size, Image.LANCZOS)
 
-        # Apply user opacity to watermark’s existing alpha
+        # Apply user opacity to watermark's existing alpha
         opacity = opacity_percentage / 100.0
         wmk_data = np.array(wmk, dtype=np.uint8)
         wmk_data[..., 3] = (wmk_data[..., 3].astype(float) * opacity).astype(np.uint8)

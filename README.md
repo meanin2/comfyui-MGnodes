@@ -1,51 +1,59 @@
-# WIP the node is not ready and does not really work yet.
+# ComfyUI Image Watermarking Node
 
-# Watermark Node for ComfyUI
+A custom node for ComfyUI that allows you to add image watermarks with advanced controls for transparency, positioning, and color manipulation.
 
-This custom node adds watermarking functionality to ComfyUI. It allows users to overlay text or images on a base image, with options for transparency, scaling, positioning, and tiling.
+![Showcase](assets/watermark_preview_wf.PNG)
 
 ## Features
-- Add text or image watermarks.
-- Customize watermark opacity (transparency).
-- Scale and position watermarks with precision.
-- Tile watermarks across the entire image.
-- Supports multiple font styles for text watermarks.
+- Add image watermarks with adjustable transparency
+- Multiple positioning options (Center, Top Left, Top Right, Bottom Left, Bottom Right, Tiled)
+- Scale watermark size
+- Remove white background from watermark
+- Invert watermark colors
+- Preserve transparency in both base image and watermark
 
 ## Installation
 
-1. Navigate to your ComfyUI directory.
-2. Place the `watermark_node` folder into the `custom_nodes` directory.
-3. Restart ComfyUI.
+1. Navigate to your ComfyUI custom nodes directory:
+```bash
+cd ComfyUI/custom_nodes/
+```
+
+2. Clone this repository into your custom nodes directory:
+```bash
+git clone https://github.com/meanin2/comfyui-watermarking.git
+```
+
+3. Restart ComfyUI
 
 ## Usage
 
-### Inputs
-- **Base Image** (`IMAGE`): The main image to which the watermark will be applied.
-- **Watermark Image** (`IMAGE`, optional): An image to use as a watermark.
-- **Watermark Text** (`STRING`, optional): Text to use as a watermark.
+1. Load your base image using a "Load Image" node
+2. Load your watermark image using another "Load Image" node
+3. Connect both to the "Add Image Watermark" node
+4. Configure the watermark settings:
+   - **Position**: Choose where to place the watermark
+   - **Opacity**: Adjust transparency (0-100%)
+   - **Scale**: Resize the watermark (10-1000%)
+   - **Make Black**: Invert the watermark colors
+   - **Remove White**: Make white pixels transparent
 
-### Settings
-- **Opacity** (`FLOAT`): Adjust the transparency of the watermark. Range: `0.0` (fully transparent) to `1.0` (fully opaque).
-- **Position** (`COMBO`): Select where to place the watermark. Options: `center`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `tiled`.
-- **Scale** (`FLOAT`): Resize the watermark. Default: `1.0`.
-- **Repeat** (`BOOL`): Tile the watermark across the image.
-- **Text Color** (`STRING`): Hex or named color for text (e.g., `#FFFFFF` or `white`).
-- **Text Size** (`INT`): Font size for text watermarks.
-- **Font Style** (`COMBO`): Select the font style. Options: `Arial`, `Courier`, `Times`.
+### Example Settings
 
-### Outputs
-- **Watermarked Image** (`IMAGE`): The final image with the watermark applied.
+As shown in the showcase image:
+- Center position with 65% scale and 100% opacity
+- Remove white background enabled
+- Original brush watermark vs inverted (black) version
 
-## Example Workflow
+### Example Workflow
 
-1. Add the node to your workflow in ComfyUI.
-2. Connect an image to the **Base Image** input.
-3. Configure watermark settings directly in the node:
-   - Specify text or upload an image as the watermark.
-   - Adjust transparency, scale, and position.
-4. Connect the output to further processing or saving.
+Check out the `examples` folder for:
+- A complete test workflow you can import into ComfyUI
+- Sample images used in the showcase
+- Test watermark images
 
-## Troubleshooting
-If the node fails, it will turn red in ComfyUI, providing a clear error message. Common issues include:
-- Missing font files: Ensure the specified font is installed on your system.
-- Invalid input types: Verify the base image and watermark are valid.
+## Tips
+- For best results with "Remove White", ensure your watermark has a clean white background
+- When using "Make Black", the inversion happens before white removal
+- The watermark mask input is optional and can be used for additional transparency control
+- Scale values above 100% will enlarge the watermark, below 100% will shrink it
