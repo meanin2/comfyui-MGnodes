@@ -7,17 +7,17 @@ NODE_CONFIG = {
     # Image Processing Nodes
     "ImageWatermarkNode": {
         "class": ImageWatermarkNode,
-        "name": "Image Watermark",
-        "category": "Image/Watermarking",
+        "name": "Add Image Watermark",
+        "category": "MGnodes/Image",
         "description": "Overlay a watermark image onto a base image with customizable transparency, position, and color settings.",
         "keywords": ["watermark", "image overlay", "transparency", "positioning", "color manipulation", "resize", "invert colors"]
     },
     
     # Text Processing Nodes
-    "LLM Thought Processor": {
+    "TextExtractorNode": {
         "class": ChainOfThoughtProcessorNode,
         "name": "Text Extractor Node",
-        "category": "Text/Processing",
+        "category": "MGnodes/Text",
         "description": "Extract and separate specific sections of text marked within defined tags, enabling advanced text analysis and manipulation.",
         "keywords": ["text processing", "split", "extract", "regex", "content separation", "ollama", "llm", "text analysis"]
     },
@@ -26,6 +26,9 @@ NODE_CONFIG = {
 }
 
 def generate_node_mappings(node_config):
+    """
+    Generates mappings for node classes, display names, categories, and keywords.
+    """
     node_class_mappings = {}
     node_display_name_mappings = {}
     node_category_mappings = {}
