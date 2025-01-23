@@ -1,14 +1,14 @@
 [project]
-name = "watermarking"
-description = "This custom node allows you to overlay a watermark image onto an existing image within ComfyUI."
+name = "MGnodes"
+description = "Assorted custom nodes with a focus on simplicity and usability including watermark node and others."
 version = "1.0.0"
 license = {file = "LICENSE"}
 
 [project.urls]
-Repository = "https://github.com/meanin2/comfyui-watermarking"
+Repository = "https://github.com/meanin2/comfyui-MGnodes"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
 PublisherId = ""
-DisplayName = "comfyui-watermarking"
+DisplayName = "comfyui-MGnodes"
 Icon = ""
