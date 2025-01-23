@@ -9,6 +9,6 @@ Repository = "https://github.com/meanin2/comfyui-MGnodes"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "meanin2"
 DisplayName = "comfyui-MGnodes"
 Icon = ""
