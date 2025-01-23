@@ -1,6 +1,6 @@
 [project]
 name = "MGnodes"
-description = "Assorted custom nodes with a focus on simplicity and usability including watermark node and others."
+description = "Assorted custom nodes with a focus on simplicity and usability including watermark node and others focused on customizing my comfy experience."
 version = "1.0.0"
 license = {file = "LICENSE"}
 
