@@ -18,6 +18,7 @@ Features:
 
 ### 2. Text Extractor Node
 A utility node for processing text output from Language Models (LLMs), specifically handling Chain-of-Thought content.
+![Text Extractor](assets/text-extractor-preview.png)
 
 Features:
 - Extracts content between `<think>...</think>` tags
