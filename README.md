@@ -26,6 +26,18 @@ Features:
 - Useful for processing LLM outputs with reasoning steps
 - Supports multiple think blocks in a single input
 
+### 3. Flux Kontext Diff Merge (Optimized)
+Preserve original image quality by merging only AI-edited regions back into the source.
+
+Features:
+- Adaptive, color-difference, SSIM*, and combined change detection
+- Multiple blending modes (poisson*, alpha, multiband*, gaussian*)
+- Intelligent mask refinement and preview output
+- Batch support with optional manual mask input
+
+\*Requires optional dependencies: `opencv-python` for advanced blending and
+mask operations, `scikit-image` for SSIM detection.
+
 ## Installation
 
 ### Option 1: ComfyUI Manager (Recommended)
